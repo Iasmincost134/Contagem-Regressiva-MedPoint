@@ -1,0 +1,216 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>MedPoint</title>
+    <style>
+		
+@layer demo, countdown;
+
+@layer countdown{
+  .countdown {
+    width: fit-content;
+    display: inline-grid;
+    grid-auto-flow: column;
+    grid-auto-columns: 1fr;
+    gap: 1rem;
+  }
+  .countdown > .part {
+    display: grid;
+    gap: 0.5rem;
+  }
+  .countdown > .part > .number {
+    aspect-ratio: 1;
+    display: grid;
+    place-items: center;
+    border-radius: 50%;
+    border: 1px solid hsl(0 0% 50% / .5);
+    font-size: 1.5rem;
+    position: relative
+  }
+  .countdown > .part.dias { --num: 365 }
+  .countdown > .part.horas { --num: 24 }
+  .countdown > .part:where(.minutos, .segundos) { --num: 60 }
+  .countdown > .part > .number::after{
+    content: "";
+    position: absolute;
+    inset: calc(var(--border-size) * -0.5);
+    border-radius: inherit;
+
+    --degree: calc(360deg / var(--num) * (var(--num) - var(--value,0)));
+    background-image: conic-gradient(var(--accent) var(--degree), transparent calc(var(--degree) + 0.1deg));
+
+    --border-size: 4px;  
+    --mask-image: radial-gradient(100% 100%, transparent calc(50% - var(--border-size)), black calc(50% - var(--border-size) + 1px));
+    -webkit-mask-image: var(--mask-image);
+    mask-image: var(--mask-image);
+  }
+  .countdown > .part > .text {
+    text-align: center;
+    opacity: 0.75
+  }
+}
+@layer demo {
+  * { box-sizing: border-box }
+  body {
+	margin: 0;
+    padding: 0;
+    font-family: Arial, sans-serif;
+    text-align: center;
+    background: #fff;
+    overflow: hidden;
+    }
+    .content h1{
+    font-size: 35px;
+    color: #808080;
+    margin-top: -350px;
+}
+
+    #countdown {
+      font-size: 36px;
+      font-weight: bold;
+      color: #fffdfd;
+	  margin-top: 400px;
+	  margin-bottom: 20px;
+    }
+    .container{
+    width: 100%;
+    height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+
+.content {
+    text-align: center;
+    z-index: 1;
+    margin-top: 320px; /* Ajuste conforme necessário */
+  }
+.background-clip{
+    position: absolute;
+    right: 0;
+    bottom: 0;
+    z-index: -1;
+	max-height: 110vh;
+	/* max-width: 100vh; */
+	overflow: hidden;
+}
+
+@media (min-aspect-ratio:16/9) {
+    .background-clip{
+        width: 100%;
+        height: auto;
+    }
+}
+
+@media (max-aspect-ratio:16/9) {
+    .background-clip{
+        width: auto;
+        height: 100%;
+    }
+}
+@media (max-width: 480px) {
+                .content h1 {
+                    font-size: 50px;
+                    margin-top: -10px;
+                }
+                #countdown {
+                    font-size: 18px;
+                    margin-top: 100px;
+                }
+                .content {
+                    margin-top: 80px;
+                }
+            }
+}
+@media (max-width: 768px) { /* Regra de mídia para telas menores que 768px */
+                .content h1 {
+                    font-size: 20px; /* Tamanho de fonte ainda menor para telas muito pequenas */
+                    margin-top: -100px; /* Posição do título ajustada ainda mais para telas muito pequenas */
+                }
+                #countdown {
+                    font-size: 18px; /* Tamanho de fonte ainda menor para telas muito pequenas */
+                    margin-top: 100px; /* Posição do contador ajustada ainda mais para telas muito pequenas */
+                }
+                .content {
+                    margin-top: 80px; /* Posição do conteúdo ajustada ainda mais para telas muito pequenas */
+                }
+            }
+        }
+    </style>
+</head>
+<body>
+  
+<div class="container">
+
+
+<video autoplay loop muted plays-inline class="background-clip">
+	<source src="large-thumbnail20230607-18829-16bvb4d.mp4" type="video/mp4">
+  </video>
+
+  <div class="content">
+	<h1 class="">MedPoint em breve</h1>
+	<div id="countdown"></div>
+	<div id="progress-bar">
+	  <div id="progress"></div>
+  </div>
+  <!-- <h2>Christmas '24</h2> -->
+  <time class="countdown" date-time="2024-12-25 00:00:00" style="--accent: #4191e1 
+  "></time>
+</div>
+    <script>
+       class Countdown {
+  constructor(el){
+    this.el = el;
+    this.targetDate = new Date(el.getAttribute("date-time"));
+    this.createCountDownParts()
+    this.countdownFunction();
+    this.countdownLoopId = setInterval(this.countdownFunction.bind(this), 1000)
+  }
+  createCountDownParts(){
+    ["dias", "horas", "minutos", "segundos"].forEach(part => {
+      const partEl = document.createElement("div");
+      partEl.classList.add("part", part);
+      const textEl = document.createElement("div");
+      textEl.classList.add("text");
+      textEl.innerText = part;
+      const numberEl = document.createElement("div");
+      numberEl.classList.add("number");
+      numberEl.innerText = 0;
+      partEl.append(numberEl, textEl);
+      this.el.append(partEl);
+      this[part] = numberEl;
+    })
+  }
+
+  countdownFunction(){
+    const currentDate = new Date();    
+    if(currentDate > this.targetDate) return clearInterval(this.intervalId);
+    const remaining = this.getRemaining(this.targetDate, currentDate);
+    Object.entries(remaining).forEach(([part,value]) => {
+      this[part].style.setProperty("--value", value)
+      this[part].innerText = value
+    })  
+  }
+  
+  getRemaining(target, now){
+    let segundos = Math.floor((target - (now))/1000);
+    let minutos = Math.floor(segundos/60);
+    let horas = Math.floor(minutos/60);
+    let dias = Math.floor(horas/24);
+    horas = horas-(dias*24);
+    minutos = minutos-(dias*24*60)-(horas*60);
+    segundos = segundos-(dias*24*60*60)-(horas*60*60)-(minutos*60);
+    return { dias, horas, minutos, segundos }      
+  }
+
+}
+
+const countdownEls= document.querySelectorAll(".countdown") || [];
+countdownEls.forEach(countdownEl => new Countdown(countdownEl))
+
+    </script>
+</body>
+</html>
